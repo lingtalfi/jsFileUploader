@@ -1,0 +1,64 @@
+.file-uploader-dropzone {
+  border: 1px dashed #919191;
+  padding: 1rem;
+  color: #53595e;
+
+  &.over {
+    background: #f2f2f2;
+  }
+}
+
+
+.file-uploader-filevisualizer {
+
+
+  display: flex;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+
+  .thumbnail {
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+    line-height: 1.2;
+
+
+    a {
+      color: black;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    .filename {
+      font-size: 80%;
+      font-weight: 400;
+    }
+
+    .close {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    .fileuploader-close-button {
+      &.delete-not-allowed {
+        display: none;
+      }
+    }
+  }
+
+
+  /*------------------------------------
+  - variations of the default built-in style
+  ------------------------------------*/
+  &.w100 {
+    .thumbnail {
+      width: 100px;
+
+      i {
+        font-size: 100px;
+      }
+    }
+  }
+}
