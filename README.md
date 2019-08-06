@@ -40,6 +40,7 @@ Table of Contents
   * [urlToForm module, creating some inputs](#urltoform-module-creating-some-inputs)
   * [File visualizer module](#file-visualizer-module)
   * [Callbacks](#callbacks)
+* [History log](#history-log)
 
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
@@ -154,11 +155,11 @@ simply use the this.appendError method from the onReceive callback.
 
 So what are the built-in options we can use?
 
-- maxFile: int = -1, the maximum number of files that we want.
+- **maxFile**: int = -1, the maximum number of files that we want.
          If -1, it means we can upload as many as we want.
 
 
-- maxFileSize: int = -1, the maximum number of bytes per file. Use -1 (negative one) to allow any size.
+- **maxFileSize**: int = -1, the maximum number of bytes per file. Use -1 (negative one) to allow any size.
              An error message will be generated if the size of the selected file is more than the maxFileSize value.
              The error message displayed to the user is customized using the "dict.maxFileSizeExceeded" key.
              The following tags can be used in the error message:
@@ -167,7 +168,7 @@ So what are the built-in options we can use?
              - {maxSize}: the max file size value formatted (with the most relevant unit)
 
 
-- mimeType: array|null, the list (javascript array []) of allowed mime types.
+- **mimeType**: array|null, the list (javascript array []) of allowed mime types.
              By default, mimeType equals null, which means all mime types are allowed.
              An error message is generated when a file's mime type is not in the allowed mime type list.
              The error message is dict.wrongMimeType, and uses the following tags:
@@ -176,11 +177,6 @@ So what are the built-in options we can use?
              - {fileMimeType}: the mime type of the current file
 
 
-Note: there is no maxFile option, that's a deliberate choice.
-That's because if this plugin starts to handle a maxFile, it also needs to handle the thumbnails (the two
-goes along together I believe), and I don't want that because there is so many different ways of handling the extra
-files (do we skip them, do we replace the first item, the last item...)..
-The dev can handle the max number of files by herself (just count the number of thumbnails in your current container).
 
 
 
@@ -200,20 +196,17 @@ When the file is uploaded (i.e. when it is sent successfully to the backend serv
 response from the back end server. The response is a json array, which structure depends on the type of response:
 
 - in case of success, the json array structure should be:
-     - type: success
+     - **type**: success
+     - **url**: (the url to the uploaded file treated by the server)
 
 - in case of error, the json array structure should be:
-     - type: error
-     - message: (the error message here...)
+     - **type**: error
+     - **message**: (the error message here...)
 
 
-You might wonder why so few information is returned in case of success.
-That's because I suggest that you use the URL.createObjectURL method (https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL),
-which has a good browser support (https://caniuse.com/#search=createObjectURL) to display your thumbnails if you need to.
-Note: I might revisit this decision later if it's not very practical, but I doubt it.
 
-
-The onComplete callback is fired for every file.
+The onSuccess callback is fired for every file that is successfully uploaded (i.e. meaning the server has
+returned a successful response for that file).
 
 
 
@@ -228,7 +221,7 @@ Error handling
 ----------------
 At any moment, when an error occurs (i.e. when the addError method has been called) the onError callback is fired,
 so that you can create any error handling system that you like.
-By default though, I provide the following error system, which you can enable using the useErrorContainer option:
+By default though, I provide the following error system, which you can enable using the **useErrorContainer** option:
 every time an error occurs, it is appended to an error container.
 Every time new files are selected, the error container is flushed out so that it can show only the
 relevant error messages.
@@ -245,10 +238,11 @@ The error message is created using a template that you define.
 
 Use the following options to configure the error container system according to your needs:
 
-- errorContainer: the jquery object representing the error container (the wrapper containing the title and the list container)
-- errorListContainer: string = ul, the jquery selector to use to target the error list container element (the error message container),
+- **useErrorContainer**: bool, whether to activate this module
+- **errorContainer**: the jquery object representing the error container (the wrapper containing the title and the list container)
+- **errorListContainer**: string = ul, the jquery selector to use to target the error list container element (the error message container),
          the jquery context being the errorContainer object.
-- errorMessageTemplate: string|callable. The template used to create each error message. Each error message being
+- **errorMessageTemplate**: string|callable. The template used to create each error message. Each error message being
          then appended to the error list container.
          If errorMessageTemplate is a string, we can use the {message} tag, which will be replaced with the actual message.
          If errorMessageTemplate is a callable, it takes the error message as an argument, and should return the
@@ -260,7 +254,7 @@ Use the following options to configure the error container system according to y
 Dropzone
 --------
 If you wish to, you can create any element and turn it into a drop zone.
-To do so, you need to pass the jquery object representing the dropzone to this plugin, using the dropzone option.
+To do so, you need to pass the jquery object representing the dropzone to this plugin, using the **dropzone** option.
 
 In order to help you style it, a css class is added when the mouse is dragging over the drop zone.
 This css class is "over" by default, and is appended to the dropzone element.
@@ -319,9 +313,9 @@ context of the container skeleton.
 Now, every time a file is being uploaded, a new progress item is appended to the list container.
 A progress item can have one of three different states:
 
-- progressing: the first state of the item, the file is being uploaded
-- completed: this state is reached when the file has been successfully uploaded
-- erroneous: an error occurred, and the upload was aborted/cancelled for some reason.
+- **progressing**: the first state of the item, the file is being uploaded
+- **completed**: this state is reached when the file has been successfully uploaded
+- **erroneous**: an error occurred, and the upload was aborted/cancelled for some reason.
          When this happens, this plugin will distinguish between two cases (corresponding to the corresponding ajax javascript event handlers):
                  - abort: the file uploaded was aborted for some reason.
                              In this case, the error message sent is defined with the "dict.uploadAborted" option.
@@ -349,13 +343,13 @@ Therefore, we can specify how those variables are affected by the state of the i
 This option is a javascript object with 3 entries (one per state), each entry defining the two variables.
 For example, the default value of this option is:
 
-- progressing:
+- **progressing**:
      - iconClass: fas fa-spinner fa-spin text-blue
      - progressBarClass: bg-blue
-- completed:
+- **completed**:
      - iconClass: fas fa-check text-green
      - progressBarClass: bg-green
-- erroneous:
+- **erroneous**:
      - iconClass: fas fa-exclamation-triangle text-red
      - progressBarClass: bg-red
 
@@ -374,6 +368,13 @@ Url to Form
 
 This built-in module will basically convert the json response from the server into input hidden fields in the target
 form.
+
+ This might be useful for when you submit the form, if you want to get the result of your ajax upload in the posted data.
+ Note: this might not be what you want though, for instance if you store the data directly from the backend service,
+ you might not need this module.
+ 
+ However if you need to treat all the posted data including the ones from the ajax upload form, then this module might help.
+
 The maximum number of fields created is governed by the maxFile option.
 The html name attribute of the generated input will be suffixed with the brackets ([]) if maxFile > 1.
 In other words, if maxFile = 1, then this module will generate one (and only one) input field which will create
@@ -385,6 +386,8 @@ jquery reference to the "urlToFormContainer" option.
 
 The html name of the field to create is defined with the "urlToFormFieldName" option, and defaults to "the_file".
 
+We can add a default value, using the "defaultValue" option, so that the plugin displays the input(s) corresponding
+to that value right away (i.e. when the form is loaded for the first time).
 
 
 File visualizer
@@ -467,6 +470,10 @@ However, if you customize your file visualizer templates, you can use the follow
 
 Also, the ".fileuploader-close-button" class can be added to any element, and it will transform this element into
 the trigger to remove the thumbnail (see how it's done in the default template: the fileVisualizerImageTemplate option).
+
+
+Note: the "defaultValue" option is used by both the urlToForm module and the fileVisualizer module.
+
 
 
 Examples
@@ -938,9 +945,17 @@ The js file uploader is quite flexible, I hope it will save you some time.
 
 
 
+History Log
+=============
 
 
+- 1.0.1 -- 2019-08-05
 
+    - fix doc typo
+
+- 1.0.0 -- 2019-08-05
+
+    - initial commit
 
 
 
