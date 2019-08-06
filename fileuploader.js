@@ -102,16 +102,6 @@
  *              - {fileMimeType}: the mime type of the current file
  *
  *
- * Note: there is no maxFile option, that's a deliberate choice.
- * That's because if this plugin starts to handle a maxFile, it also needs to handle the thumbnails (the two
- * goes along together I believe), and I don't want that because there is so many different ways of handling the extra
- * files (do we skip them, do we replace the first item, the last item...)..
- * The dev can handle the max number of files by herself (just count the number of thumbnails in your current container).
- *
- *
- *
- *
- *
  *
  * ### Step 2: onProgress
  *
@@ -127,19 +117,15 @@
  *
  * - in case of success, the json array structure should be:
  *      - type: success
+ *      - url: (the url to the uploaded file treated by the server)
  *
  * - in case of error, the json array structure should be:
  *      - type: error
  *      - message: (the error message here...)
  *
  *
- * You might wonder why so few information is returned in case of success.
- * That's because I suggest that you use the URL.createObjectURL method (https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL),
- * which has a good browser support (https://caniuse.com/#search=createObjectURL) to display your thumbnails if you need to.
- * Note: I might revisit this decision later if it's not very practical, but I doubt it.
- *
- *
- * The onComplete callback is fired for every file.
+ * The onSuccess callback is fired for every file that is successfully uploaded (i.e. meaning the server has
+ * returned a successful response for that file).
  *
  *
  *
@@ -171,6 +157,7 @@
  *
  * Use the following options to configure the error container system according to your needs:
  *
+ * - useErrorContainer: bool, whether to activate this module
  * - errorContainer: the jquery object representing the error container (the wrapper containing the title and the list container)
  * - errorListContainer: string = ul, the jquery selector to use to target the error list container element (the error message container),
  *          the jquery context being the errorContainer object.
@@ -300,6 +287,14 @@
  *
  * This built-in module will basically convert the json response from the server into input hidden fields in the target
  * form.
+ *
+ * This might be useful for when you submit the form, if you want to get the result of your ajax upload in the posted data.
+ * Note: this might not be what you want though, for instance if you store the data directly from the backend service,
+ * you might not need this module.
+ *
+ * However if you need to treat all the posted data including the ones from the ajax upload form, then this module might help.
+ *
+ *
  * The maximum number of fields created is governed by the maxFile option.
  * The html name attribute of the generated input will be suffixed with the brackets ([]) if maxFile > 1.
  * In other words, if maxFile = 1, then this module will generate one (and only one) input field which will create
@@ -310,6 +305,9 @@
  * jquery reference to the "urlToFormContainer" option.
  *
  * The html name of the field to create is defined with the "urlToFormFieldName" option, and defaults to "the_file".
+ *
+ * We can add a default value, using the "defaultValue" option, so that the plugin displays the input(s) corresponding
+ * to that value right away (i.e. when the form is loaded for the first time).
  *
  *
  *
@@ -395,6 +393,11 @@
  * the trigger to remove the thumbnail (see how it's done in the default template: the fileVisualizerImageTemplate option).
  *
  *
+ * Note: the "defaultValue" option can be used to setup the file visualizer with some files when the form control is loaded
+ * for the first time.
+ *
+ * Note: the "defaultValue" option is used by both the urlToForm module and the fileVisualizer module.
+ *
  *
  *
  *
@@ -479,6 +482,26 @@
             var jUrlToFormContainer = null;
             if (true === $this.options.useUrlToForm) {
                 jUrlToFormContainer = this.options.urlToFormContainer;
+
+                // default value?
+                if ('' !== this.options.defaultValue) {
+                    var defaultValue = this.options.defaultValue;
+                    var name = $this.options.urlToFormFieldName;
+                    if (maxFile > 1) {
+                        name += "[]";
+                    }
+
+                    if ("string" === typeof defaultValue) {
+                        defaultValue = [defaultValue];
+                    }
+
+                    for (var key in defaultValue) {
+                        var url = defaultValue[key];
+                        var input = '<input type="hidden" name="' + name + '" value="' + escapeHtml(url) + '"/>';
+                        var jInput = $(input);
+                        jUrlToFormContainer.append(jInput);
+                    }
+                }
             }
 
 
@@ -497,6 +520,32 @@
 
                     return false;
                 });
+
+
+                // default value?
+                if ('' !== this.options.defaultValue) {
+                    var _defaultValue = this.options.defaultValue;
+
+                    if ("string" === typeof _defaultValue) {
+                        _defaultValue = [_defaultValue];
+                    }
+
+                    for (var _key in _defaultValue) {
+                        var _url = _defaultValue[_key];
+                        var _fileName = _url.split('/').pop();
+
+
+                        var req;
+                        req = $.ajax({
+                            type: "HEAD",
+                            url: _url,
+                            success: function () {
+                                var fileSize = req.getResponseHeader("Content-Length");
+                                $this.fileVisualizerAddItem(jFileVisualizer, _url, _fileName, fileSize);
+                            }
+                        });
+                    }
+                }
             }
 
 
@@ -723,44 +772,7 @@
                                                     jThumbnails.first().remove();
                                                 }
 
-
-                                                var extension = jsonResponse.url.split('.').pop().toLowerCase();
-                                                var thumbnail;
-                                                var sAllowDelete = "";
-                                                if (true === $this.options.fileVisualizerAllowDeleteAction) {
-                                                    sAllowDelete = "delete-allowed";
-                                                } else {
-                                                    sAllowDelete = "delete-not-allowed";
-                                                }
-                                                var tags = {
-                                                    '{fileUrlEscaped}': escapeHtml(jsonResponse.url),
-                                                    '{fileName}': file.name,
-                                                    '{fileSize}': formatBytes(file.size),
-                                                    '{iconClass}': "",
-                                                    '{allowDelete}': sAllowDelete,
-                                                    '{fileUrl}': jsonResponse.url,
-
-                                                };
-
-                                                // is image or not?
-                                                if (-1 === imageExtensions.indexOf(extension)) {
-                                                    thumbnail = $this.options.fileVisualizerNotImageTemplate;
-                                                    if (extension in $this.options.fileVisualizerExtension2icon) {
-                                                        tags['{iconClass}'] = $this.options.fileVisualizerExtension2icon[extension];
-                                                    } else {
-                                                        tags['{iconClass}'] = $this.options.fileVisualizerFallbackIcon;
-                                                    }
-                                                } else {
-                                                    thumbnail = $this.options.fileVisualizerImageTemplate;
-                                                }
-                                                for (var tag in tags) {
-                                                    var value = tags[tag];
-                                                    thumbnail = thumbnail.replace(new RegExp(tag, 'g'), value);
-                                                }
-                                                var jThumbnail = $(thumbnail);
-                                                jThumbnail.addClass('fileuploader-thumbnail');
-                                                jFileVisualizer.append(jThumbnail);
-
+                                                $this.fileVisualizerAddItem(jFileVisualizer, jsonResponse.url, file.name, file.size);
                                             }
 
                                             $this.options.onSuccess(file, jsonResponse);
@@ -919,6 +931,44 @@
                     jInput.remove();
                 }
             }
+        },
+        fileVisualizerAddItem: function (jFileVisualizer, url, fileName, fileSize) {
+            var extension = url.split('.').pop().toLowerCase();
+            var thumbnail;
+            var sAllowDelete = "";
+            if (true === this.options.fileVisualizerAllowDeleteAction) {
+                sAllowDelete = "delete-allowed";
+            } else {
+                sAllowDelete = "delete-not-allowed";
+            }
+            var tags = {
+                '{fileUrlEscaped}': escapeHtml(url),
+                '{fileName}': fileName,
+                '{fileSize}': formatBytes(fileSize),
+                '{iconClass}': "",
+                '{allowDelete}': sAllowDelete,
+                '{fileUrl}': url,
+
+            };
+
+            // is image or not?
+            if (-1 === imageExtensions.indexOf(extension)) {
+                thumbnail = this.options.fileVisualizerNotImageTemplate;
+                if (extension in this.options.fileVisualizerExtension2icon) {
+                    tags['{iconClass}'] = this.options.fileVisualizerExtension2icon[extension];
+                } else {
+                    tags['{iconClass}'] = this.options.fileVisualizerFallbackIcon;
+                }
+            } else {
+                thumbnail = this.options.fileVisualizerImageTemplate;
+            }
+            for (var tag in tags) {
+                var value = tags[tag];
+                thumbnail = thumbnail.replace(new RegExp(tag, 'g'), value);
+            }
+            var jThumbnail = $(thumbnail);
+            jThumbnail.addClass('fileuploader-thumbnail');
+            jFileVisualizer.append(jThumbnail);
         }
 
     });
@@ -958,6 +1008,7 @@
         },
         onProgress: function (file, percent, uploadedBytes, totalBytes) {
         },
+        defaultValue: "",
         // dropzone
         dropzone: null, // jquery object or null
         dropzoneOverClass: "over",

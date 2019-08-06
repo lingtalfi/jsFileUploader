@@ -949,7 +949,11 @@ History Log
 =============
 
 
-- 1.0.1 -- 2019-08-05
+- 1.1.0 -- 2019-08-06
+
+    - add defaultValue option
+
+- 1.0.1 -- 2019-08-06
 
     - fix doc typo
 
