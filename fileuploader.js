@@ -933,7 +933,7 @@
             }
         },
         fileVisualizerAddItem: function (jFileVisualizer, url, fileName, fileSize) {
-            var extension = url.split('.').pop().toLowerCase();
+            var extension = fileName.split('.').pop().toLowerCase();
             var thumbnail;
             var sAllowDelete = "";
             if (true === this.options.fileVisualizerAllowDeleteAction) {

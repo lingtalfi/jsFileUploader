@@ -949,6 +949,10 @@ History Log
 =============
 
 
+- 1.1.1 -- 2019-10-17
+
+    - fix fileVisualizerAddItem taking extension from url instead of filename
+
 - 1.1.0 -- 2019-08-06
 
     - add defaultValue option
