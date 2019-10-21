@@ -949,6 +949,10 @@ History Log
 =============
 
 
+- 1.2.0 -- 2019-10-21
+
+    - now the file visualizer guesses the file name from Content-Disposition header when available
+
 - 1.1.1 -- 2019-10-17
 
     - fix fileVisualizerAddItem taking extension from url instead of filename

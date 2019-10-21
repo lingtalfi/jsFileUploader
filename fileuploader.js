@@ -438,6 +438,14 @@
         });
     }
 
+
+    function stripQuotes(a) {
+        if (a.charAt(0) === '"' && a.charAt(a.length - 1) === '"') {
+            return a.substr(1, a.length - 2);
+        }
+        return a;
+    }
+
     var imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp"];
 
     //----------------------------------------
@@ -530,6 +538,7 @@
                         _defaultValue = [_defaultValue];
                     }
 
+
                     for (var _key in _defaultValue) {
                         var _url = _defaultValue[_key];
                         var _fileName = _url.split('/').pop();
@@ -540,6 +549,27 @@
                             type: "HEAD",
                             url: _url,
                             success: function () {
+
+
+                                /**
+                                 * Sometimes, you use a php service to provide the uploaded file, such as in:
+                                 * http://jindemo/user-data?file=images%2Favatar.png&id=%242y%2410%24MLxVef2wksJhoQP%2FHSaT8u%2FCQVmMbz9YHPYN.rRkHw.OFJ6aJHBD6
+                                 * In this case, the service might have provided the real filename via content-disposition,
+                                 * which might look something like this:
+                                 *
+                                 * - inline; filename="avatar.png"
+                                 *
+                                 */
+                                var contentDispo = req.getResponseHeader("Content-Disposition");
+                                if (null !== contentDispo) {
+                                    var p = contentDispo.split('filename=');
+                                    if (2 === p.length) {
+                                        _fileName = p.pop();
+                                        _fileName = stripQuotes(_fileName);
+                                    }
+                                }
+
+
                                 var fileSize = req.getResponseHeader("Content-Length");
                                 $this.fileVisualizerAddItem(jFileVisualizer, _url, _fileName, fileSize);
                             }
